@@ -1,0 +1,61 @@
+@use '@angular/material' as mat;
+
+html {
+  color-scheme: light;
+  @include mat.theme((
+    color: (primary: mat.$azure-palette, tertiary: mat.$blue-palette),
+    typography: Assistant,
+    density: -1,
+  ));
+}
+
+:root {
+  --app-bg: #f4f6f9;
+  --app-surface: #ffffff;
+  --app-border: #dfe3ea;
+  --app-text-muted: #5b6575;
+  --app-accent: #1d5fbf;
+  --app-radius: 12px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: Assistant, 'Segoe UI', Arial, sans-serif;
+  background: var(--app-bg);
+  color: #1b2330;
+}
+
+.mat-icon,
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+}
+
+/* A white rounded section used by every panel. */
+.panel {
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius);
+  padding: 16px 20px;
+}
+
+.panel-title {
+  margin: 0 0 12px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.muted {
+  color: var(--app-text-muted);
+}

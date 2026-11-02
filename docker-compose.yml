@@ -1,0 +1,21 @@
+name: supports
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: supports
+      POSTGRES_USER: supports
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-supports_dev}
+    ports:
+      - "5544:5432"   # 5544 on the host to avoid clashing with a local PostgreSQL
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U supports -d supports"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:

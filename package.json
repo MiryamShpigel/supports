@@ -1,0 +1,22 @@
+{
+  "name": "supports",
+  "private": true,
+  "description": "Cross-domain support requests system - POC",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build:shared": "npm run build -w @supports/shared",
+    "db:up": "docker compose up -d db",
+    "db:migrate": "npm run db:migrate -w @supports/api",
+    "db:seed": "npm run db:seed -w @supports/api",
+    "dev": "npm run build:shared && concurrently -n shared,api,web -c gray,blue,magenta \"npm run watch -w @supports/shared\" \"npm run dev -w @supports/api\" \"npm start -w @supports/web\"",
+    "build": "npm run build:shared && npm run build -w @supports/api && npm run build -w @supports/web",
+    "test": "npm run build:shared && npm test -w @supports/shared && npm test -w @supports/api"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "typescript": "~5.9.2"
+  }
+}

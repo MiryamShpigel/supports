@@ -1,0 +1,19 @@
+bin/
+obj/
+*.user
+.vs/
+.vscode/
+node_modules/
+dist/
+.angular/
+.env
+appsettings.*.local.json
+~$*.docx
+coverage/
+
+# Exam instructions (not for the public repo)
+*.docx
+.vercel/
+
+.vercel
+.env*
