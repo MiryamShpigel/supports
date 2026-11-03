@@ -24,5 +24,17 @@ function toUserMessage(error: HttpErrorResponse): string {
     ? (body.error.details as { message?: string }[]).map((d) => d.message).filter(Boolean)
     : [];
   const message = body?.error.message ?? 'אירעה שגיאה בלתי צפויה';
-  return details.length ? `${message}: ${details.join(' · ')}` : message;
+  const text = details.length ? `${message}: ${details.join(' · ')}` : message;
+  return withSupportId(text, error, body);
+}
+
+/**
+ * Server-side failures carry the request's correlation id, which is on every log line of that
+ * request. Showing its start lets support find the exact failure instead of guessing.
+ * Errors the user can fix themselves (validation, not found) do not need it.
+ */
+function withSupportId(text: string, error: HttpErrorResponse, body: ApiErrorBody | null): string {
+  if (error.status < 500) return text;
+  const id = body?.error.correlationId ?? error.headers.get('x-correlation-id');
+  return id ? `${text} (מזהה לתמיכה: ${id.slice(0, 8)})` : text;
 }

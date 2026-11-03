@@ -1,10 +1,14 @@
-import type { DatasetMetadata, QueryDefinition } from '@supports/shared';
+import type { DatasetMetadata, QueryDefinition, QueryScope } from '@supports/shared';
 
 export interface ParsedQuery {
   definition: QueryDefinition;
   warnings: string[];
   /** Name of the parser that actually produced the result. */
   provider: string;
+  /** The parser's judgement of whether the data can answer the question. */
+  scope: QueryScope;
+  /** Why the question is partial or out of scope (Hebrew, one sentence). */
+  scopeNote?: string;
 }
 
 /**

@@ -1,45 +1,65 @@
-import { ChangeDetectionStrategy, Component, computed, input, linkedSignal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal } from '@angular/core';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
-import type { QueryResult } from '@supports/shared';
+import { canShowPie, type ChartKind, type QueryResult } from '@supports/shared';
 import type { ChartConfiguration } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
+import { QueryStore } from '../../state/query.store';
 
 /** Categorical palette in fixed order (validated for color-vision deficiency). */
 const SERIES_COLORS = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#6250d6', '#e34948'];
 const MAX_SERIES = SERIES_COLORS.length;
 const numberFormat = new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 });
+const percentFormat = new Intl.NumberFormat('he-IL', { style: 'percent', maximumFractionDigits: 0 });
 
 /**
- * Bar chart of a grouped result: first grouping on the axis, second grouping (if any)
- * as side-by-side series. One metric at a time - never two scales on one chart.
+ * Chart of a grouped result, one metric at a time - never two scales on one chart.
+ * Bars by default: first grouping on the axis, second grouping (if any) as side-by-side series.
+ * A doughnut is offered, and shown first, only when a part-of-whole reading is honest
+ * (see canShowPie); the user can switch back to bars.
  */
 @Component({
   selector: 'app-results-chart',
   imports: [BaseChartDirective, MatButtonToggleModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    @if (metricColumns().length > 1) {
-      <mat-button-toggle-group hideSingleSelectionIndicator [value]="metricKey()" (change)="metricKey.set($event.value)" aria-label="מדד בגרף">
-        @for (metric of metricColumns(); track metric.key) {
-          <mat-button-toggle [value]="metric.key">{{ metric.label }}</mat-button-toggle>
-        }
-      </mat-button-toggle-group>
-    }
-    @if (tooManySeries()) {
+    <div class="toolbar">
+      @if (metricColumns().length > 1) {
+        <mat-button-toggle-group hideSingleSelectionIndicator [value]="metricKey()" (change)="metricKey.set($event.value)" aria-label="מדד בגרף">
+          @for (metric of metricColumns(); track metric.key) {
+            <mat-button-toggle [value]="metric.key">{{ metric.label }}</mat-button-toggle>
+          }
+        </mat-button-toggle-group>
+      }
+      @if (pieAllowed()) {
+        <mat-button-toggle-group hideSingleSelectionIndicator [value]="kind()" (change)="kind.set($event.value)" aria-label="סוג גרף">
+          <mat-button-toggle value="doughnut">עוגה</mat-button-toggle>
+          <mat-button-toggle value="bar">עמודות</mat-button-toggle>
+        </mat-button-toggle-group>
+      }
+    </div>
+    @if (kind() === 'bar' && tooManySeries()) {
       <p class="muted note">מוצגות {{ maxSeries }} הסדרות הראשונות; הנתונים המלאים בטבלה.</p>
     }
     <div class="chart-box">
-      <canvas baseChart type="bar" [data]="chart().data" [options]="chart().options"></canvas>
+      @if (kind() === 'doughnut') {
+        <canvas baseChart type="doughnut" [data]="doughnut().data" [options]="doughnut().options"></canvas>
+      } @else {
+        <canvas baseChart type="bar" [data]="bars().data" [options]="bars().options"></canvas>
+      }
     </div>
   `,
   styles: `
     :host { display: block; margin-bottom: 16px; }
     .chart-box { position: relative; height: 300px; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 8px 16px; justify-content: space-between; }
+    .toolbar:empty { display: none; }
     mat-button-toggle-group { margin-bottom: 8px; font-size: 0.85rem; }
     .note { font-size: 0.82rem; margin: 0 0 6px; }
   `,
 })
 export class ResultsChartComponent {
+  private readonly store = inject(QueryStore);
+
   readonly result = input.required<QueryResult>();
   protected readonly maxSeries = MAX_SERIES;
 
@@ -48,16 +68,64 @@ export class ResultsChartComponent {
   private readonly dimensions = computed(() => this.result().columns.filter((c) => c.kind === 'dimension'));
   readonly tooManySeries = computed(() => this.seriesNames().length > MAX_SERIES);
 
+  readonly pieAllowed = computed(() => {
+    const dataset = this.store.dataset();
+    return dataset !== null && canShowPie(this.result(), this.metricKey(), dataset);
+  });
+  /** Doughnut whenever it is allowed (also after switching metric); the user may pick bars. */
+  readonly kind = linkedSignal<ChartKind>(() => (this.pieAllowed() ? 'doughnut' : 'bar'));
+
   private readonly seriesNames = computed(() => {
     const second = this.dimensions()[1];
     return second ? unique(this.result().rows.map((r) => String(r[second.key]))) : [];
   });
 
-  readonly chart = computed<{ data: ChartConfiguration<'bar'>['data']; options: ChartConfiguration<'bar'>['options'] }>(() => {
+  private readonly metricLabel = computed(
+    () => this.metricColumns().find((m) => m.key === this.metricKey())?.label ?? this.metricKey(),
+  );
+
+  readonly doughnut = computed<{ data: ChartConfiguration<'doughnut'>['data']; options: ChartConfiguration<'doughnut'>['options'] }>(() => {
+    const rows = this.result().rows;
+    const dimension = this.dimensions()[0]!;
+    const metric = this.metricKey();
+    const values = rows.map((r) => Number(r[metric] ?? 0));
+    const total = values.reduce((sum, v) => sum + v, 0);
+    const share = (value: number) => percentFormat.format(total ? value / total : 0);
+
+    return {
+      data: {
+        // The share is part of each legend entry, so the parts read without hovering.
+        labels: rows.map((r, i) => `${String(r[dimension.key])} · ${share(values[i]!)}`),
+        datasets: [
+          {
+            label: this.metricLabel(),
+            data: values,
+            backgroundColor: SERIES_COLORS.slice(0, values.length),
+            borderColor: '#ffffff',
+            borderWidth: 2,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        locale: 'he-IL',
+        cutout: '58%',
+        plugins: {
+          legend: { rtl: true, position: 'right', labels: { boxWidth: 12, color: '#1b2330', padding: 14 } },
+          tooltip: {
+            rtl: true,
+            callbacks: { label: (ctx) => `${this.metricLabel()}: ${numberFormat.format(Number(ctx.raw))} (${share(Number(ctx.raw))})` },
+          },
+        },
+      },
+    };
+  });
+
+  readonly bars = computed<{ data: ChartConfiguration<'bar'>['data']; options: ChartConfiguration<'bar'>['options'] }>(() => {
     const rows = this.result().rows;
     const [first, second] = this.dimensions();
     const metric = this.metricKey();
-    const metricLabel = this.metricColumns().find((m) => m.key === metric)?.label ?? metric;
     const labels = unique(rows.map((r) => String(r[first!.key])));
 
     const series = second
@@ -65,7 +133,7 @@ export class ResultsChartComponent {
           label: name,
           data: labels.map((label) => Number(rows.find((r) => String(r[first!.key]) === label && String(r[second.key]) === name)?.[metric] ?? 0)),
         }))
-      : [{ label: metricLabel, data: labels.map((label) => Number(rows.find((r) => String(r[first!.key]) === label)?.[metric] ?? 0)) }];
+      : [{ label: this.metricLabel(), data: labels.map((label) => Number(rows.find((r) => String(r[first!.key]) === label)?.[metric] ?? 0)) }];
 
     return {
       data: {

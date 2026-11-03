@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
-import { FreeTextComponent } from './features/free-text/free-text.component';
 import { QueryBuilderComponent } from './features/query-builder/query-builder.component';
 import { ResultsComponent } from './features/results/results.component';
 import { SavedQueriesComponent } from './features/saved-queries/saved-queries.component';
@@ -8,7 +7,7 @@ import { QueryStore } from './state/query.store';
 
 @Component({
   selector: 'app-root',
-  imports: [MatIconModule, FreeTextComponent, QueryBuilderComponent, ResultsComponent, SavedQueriesComponent],
+  imports: [MatIconModule, QueryBuilderComponent, ResultsComponent, SavedQueriesComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <header class="header">
@@ -27,7 +26,6 @@ import { QueryStore } from './state/query.store';
         <app-saved-queries />
       </aside>
       <section class="workspace">
-        <app-free-text />
         <app-query-builder />
         <app-results />
       </section>

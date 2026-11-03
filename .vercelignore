@@ -1,0 +1,10 @@
+# Vercel builds from source; local builds, caches and private files stay out of the upload.
+**/node_modules
+**/dist
+**/.angular
+**/coverage
+*.docx
+.env
+.env.*
+!.env.example
+apps/api/.env

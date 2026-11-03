@@ -51,9 +51,24 @@ describe('RuleBasedQueryParser', () => {
     expect(definition.filters).toEqual([{ field: 'district', operator: 'in', values: ['north', 'south'] }]);
   });
 
-  it('warns when nothing is recognised', async () => {
-    const { definition, warnings } = await parser.parse('מה שלומך היום?', dataset);
+  it('marks a question about something else as out of scope', async () => {
+    const { definition, scope, scopeNote, warnings } = await parser.parse('מה מזג האוויר מחר?', dataset);
+    expect(scope).toBe('out');
+    expect(scopeNote).toContain('בקשות תמיכה');
+    expect(definition.filters).toEqual([]);
+    expect(warnings).toEqual([]);
+  });
+
+  it('keeps a request for all records in scope and warns that nothing narrows it', async () => {
+    const { definition, scope, warnings } = await parser.parse('הצג לי את כל הבקשה', dataset);
+    expect(scope).toBe('in');
     expect(definition.filters).toEqual([]);
     expect(warnings).toHaveLength(1);
+  });
+
+  it('marks a recognised question as in scope', async () => {
+    const { scope, scopeNote } = await parser.parse('בקשות במחוז צפון', dataset);
+    expect(scope).toBe('in');
+    expect(scopeNote).toBeUndefined();
   });
 });

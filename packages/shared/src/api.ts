@@ -55,9 +55,20 @@ export const NlParseRequestSchema = z.object({
 
 export type NlParseRequest = z.infer<typeof NlParseRequestSchema>;
 
+/**
+ * Whether the data can answer the question:
+ * `in` - fully; `partial` - only part of it (the closest query is offered with a note);
+ * `out` - not at all (no query is offered).
+ */
+export type QueryScope = 'in' | 'partial' | 'out';
+
 export interface NlParseResult {
   definition: QueryDefinition;
+  /** Empty when scope is `out`. */
   question: string;
+  scope: QueryScope;
+  /** Why the question is partial or out of scope; shown prominently to the user. */
+  scopeNote?: string;
   /** Which parser produced the result, e.g. "anthropic" or "rule-based". */
   provider: string;
   /** Parts of the text the parser could not map; shown to the user as a warning. */

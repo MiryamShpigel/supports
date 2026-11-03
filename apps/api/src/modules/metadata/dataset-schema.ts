@@ -25,6 +25,7 @@ export function toPublicMetadata(schema: DatasetSchema): DatasetMetadata {
     key: schema.key,
     label: schema.label,
     questionPrefix: schema.questionPrefix,
+    description: schema.description,
     fields: schema.fields.map(({ storage: _s, sourceName: _n, ...field }) => field),
     metrics: schema.metrics.map(({ sourceColumn: _c, ...metric }) => metric),
   };

@@ -1,5 +1,18 @@
 name: supports
 
+# Local development: `npm run db:up` starts only the database.
+# Whole system:      `docker compose up -d --build`  ->  http://localhost:8080
+# Demo data (once):  `docker compose run --rm migrate node dist/db/seed.js`
+# Secrets and options are read from a root .env file (see .env.example), never from this file.
+
+x-api-env: &api-env
+  NODE_ENV: production
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+  DATABASE_URL: postgres://supports:${POSTGRES_PASSWORD:-supports_dev}@db:5432/supports
+  AI_PROVIDER: ${AI_PROVIDER:-rule-based}
+  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+  ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-opus-5-5}
+
 services:
   db:
     image: postgres:16-alpine
@@ -16,6 +29,35 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+  # One-off job: applies pending migrations, then exits. The API starts only after it succeeds.
+  migrate:
+    build: { context: ., dockerfile: apps/api/Dockerfile }
+    image: supports-api
+    command: ["node", "dist/db/migrate.js"]
+    environment: *api-env
+    depends_on:
+      db: { condition: service_healthy }
+    restart: "no"
+
+  api:
+    image: supports-api
+    environment:
+      <<: *api-env
+      PORT: "3000"
+      CORS_ORIGIN: http://localhost:8080
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    restart: unless-stopped
+
+  web:
+    build: { context: ., dockerfile: apps/web/Dockerfile }
+    image: supports-web
+    ports:
+      - "8080:80"
+    depends_on:
+      api: { condition: service_healthy }
+    restart: unless-stopped
 
 volumes:
   pgdata:

@@ -6,7 +6,9 @@ export interface MetadataRepository {
   findDatasets(tenantId: string): Promise<DatasetSchema[]>;
 }
 
-interface DatasetRow { key: string; tenant_id: string; label: string; question_prefix: string; source_table: string }
+interface DatasetRow {
+  key: string; tenant_id: string; label: string; question_prefix: string; description: string | null; source_table: string;
+}
 interface FieldRow {
   dataset_key: string; key: string; label: string; data_type: FieldDataType; storage: 'column' | 'attribute';
   source_name: string; operators: Operator[]; is_filterable: boolean; is_groupable: boolean; is_listable: boolean;
@@ -23,7 +25,7 @@ export class PgMetadataRepository implements MetadataRepository {
   async findDatasets(tenantId: string): Promise<DatasetSchema[]> {
     const [datasets, fields, options, metrics] = await Promise.all([
       this.db.query<DatasetRow>(
-        `SELECT key, tenant_id, label, question_prefix, source_table
+        `SELECT key, tenant_id, label, question_prefix, description, source_table
          FROM meta.datasets WHERE tenant_id = $1 AND is_active ORDER BY key`,
         [tenantId],
       ),
@@ -49,6 +51,7 @@ export class PgMetadataRepository implements MetadataRepository {
       tenantId: d.tenant_id,
       label: d.label,
       questionPrefix: d.question_prefix,
+      description: d.description ?? undefined,
       sourceTable: d.source_table,
       fields: fields.rows
         .filter((f) => f.dataset_key === d.key)

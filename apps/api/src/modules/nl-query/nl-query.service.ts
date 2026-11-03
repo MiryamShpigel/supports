@@ -20,19 +20,43 @@ export class NlQueryService {
     const { definition, dropped } = keepValidParts(parsed.definition, (q) => validateQuery(q, dataset).length === 0);
     const warnings = [...parsed.warnings, ...dropped.map((d) => `חלק מהפרשנות הושמט כי אינו תקין: ${d}`)];
 
-    const result: NlParseResult = {
-      definition,
-      question: phraseQuestion(definition, dataset),
-      provider: parsed.provider,
-      warnings,
-    };
+    // A parser that proposed something, all of which failed validation, did not understand
+    // the question: offering "all requests" instead would answer a different question.
+    const nothingLeft = dropped.length > 0 && isEmptyQuery(definition);
+    const scope = parsed.scope === 'out' || nothingLeft ? 'out' : parsed.scope;
+
+    const result: NlParseResult =
+      scope === 'out'
+        ? {
+            definition: emptyQuery(dataset.key),
+            question: '',
+            scope,
+            scopeNote: parsed.scopeNote ?? 'לא ניתן היה להבין את השאלה במונחים של המערכת.',
+            provider: parsed.provider,
+            warnings: [],
+          }
+        : {
+            definition,
+            question: phraseQuestion(definition, dataset),
+            scope,
+            scopeNote: scope === 'partial' ? parsed.scopeNote : undefined,
+            provider: parsed.provider,
+            warnings,
+          };
     await this.audit.record(ctx, 'query.parse_free_text', undefined, {
       text: request.text,
       provider: parsed.provider,
+      scope,
       question: result.question,
     });
     return result;
   }
+}
+
+const emptyQuery = (dataset: string): QueryDefinition => ({ dataset, filters: [], groupBy: [], metrics: ['count'] });
+
+function isEmptyQuery(query: QueryDefinition): boolean {
+  return query.filters.length === 0 && query.groupBy.length === 0 && query.metrics.length === 1;
 }
 
 /** Keeps each filter / grouping / metric only if the query stays valid with it. */

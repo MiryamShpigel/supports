@@ -21,9 +21,10 @@
 - [x] מיגרציות SQL + מטא-דאטה + seed (3,000 בקשות, 2 שאילתות לדוגמה)
 - [x] דוגמת הוספת שדה במטא-דאטה בלבד (`apps/api/src/db/examples/add-social-cluster-field.sql`)
 - [x] קליינט Angular: שאלה חופשית, בונה שאילתה דינמי, תוצאות (טבלה+גרף), שאילתות שמורות
-- [ ] אימות מקצה לקצה מול DB אמיתי
-- [ ] README בעברית + תשובות לשאלות + DevOps + תרשימים (Mermaid)
-- [ ] Dockerfiles + docker-compose מלא + CI לדוגמה
+- [x] אימות מקצה לקצה מול DB אמיתי (מקומית וב-docker compose)
+- [x] README בעברית + תשובות לשאלות + DevOps + תרשימים (Mermaid)
+- [x] Dockerfiles + docker-compose מלא
+- [ ] CI לדוגמה
 
 ## הערות
 - בסעיף UML מופיע פעמיים "תרשים מחלקות"; השני ("תרחיש מקצה לקצה") הוא Sequence Diagram.

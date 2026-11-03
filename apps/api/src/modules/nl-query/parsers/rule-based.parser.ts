@@ -64,22 +64,49 @@ export class RuleBasedQueryParser implements NlQueryParser {
       groupBy,
       metrics: [...metrics],
     };
-    const warnings: string[] = [];
-    if (definition.filters.length === 0 && groupBy.length === 0) {
-      warnings.push('לא זוהו בשאלה פרמטרים מוכרים – תוצג כלל הבקשות. ניתן לדייק את השאלה או לבחור פרמטרים ידנית.');
-    }
-
     // 5. A field named in the text ("בסטטוס ...") whose value was not recognised.
     const mentionTerms = dataset.fields
       .filter((f) => f.filterable && !filters.has(f.key) && !groupBy.includes(f.key))
       .flatMap((f) => [f.label, ...(f.synonyms ?? [])].map((term) => ({ term, label: f.label })));
     const mentioned = new Set(input.consumeTerms(mentionTerms).map((m) => m.label));
+
+    // 6. Scope. Without a model there is no "partial": the question is either about this
+    // data or not. Nothing recognised and the dataset itself not named ("בקשות", "תמיכה")
+    // means the question is about something else.
+    const nothingRecognised =
+      definition.filters.length === 0 && groupBy.length === 0 && metrics.size === 1 && mentioned.size === 0;
+    if (nothingRecognised && !namesDataset(text, dataset)) {
+      return {
+        definition,
+        warnings: [],
+        provider: this.name,
+        scope: 'out',
+        scopeNote: `השאלה אינה עוסקת ב${dataset.label}, ולכן אין לה תשובה במערכת.`,
+      };
+    }
+
+    const warnings: string[] = [];
+    if (definition.filters.length === 0 && groupBy.length === 0) {
+      warnings.push('לא זוהו בשאלה פרמטרים מוכרים – תוצג כלל הבקשות. ניתן לדייק את השאלה או לבחור פרמטרים ידנית.');
+    }
     for (const label of mentioned) {
       warnings.push(`הוזכר "${label}" אך לא זוהה ערך – יש לבחור אותו ידנית בעריכה.`);
     }
 
-    return { definition, warnings, provider: this.name };
+    return { definition, warnings, provider: this.name, scope: 'in' };
   }
+}
+
+/**
+ * True when the text names the dataset by a word of its label, in any common Hebrew
+ * inflection: "בקשות תמיכה" matches "בקשה", "בקשות", "תמיכות".
+ */
+function namesDataset(text: string, dataset: DatasetMetadata): boolean {
+  const stems = dataset.label
+    .split(/\s+/)
+    .map((word) => word.replace(/(ות|ים|ה)$/, ''))
+    .filter((stem) => stem.length >= 3);
+  return stems.some((stem) => text.includes(stem));
 }
 
 function normalize(text: string): string {

@@ -55,6 +55,8 @@ export interface DatasetMetadata {
   label: string;
   /** Opening of every generated question: "הצג את כלל בקשות התמיכה". */
   questionPrefix: string;
+  /** What the data is about; tells the AI parser what is in and out of scope. */
+  description?: string;
   fields: FieldDefinition[];
   metrics: MetricDefinition[];
 }
