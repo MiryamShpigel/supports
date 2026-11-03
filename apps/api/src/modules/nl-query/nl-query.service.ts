@@ -33,7 +33,7 @@ export class NlQueryService {
             scope,
             scopeNote: parsed.scopeNote ?? 'לא ניתן היה להבין את השאלה במונחים של המערכת.',
             provider: parsed.provider,
-            warnings: [],
+            warnings: warnings.filter((warning) => warning.startsWith('שירות ה-AI')),
           }
         : {
             definition,

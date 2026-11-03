@@ -6,6 +6,8 @@ import { AuditService } from './modules/audit/audit.service.js';
 import { PgMetadataRepository } from './modules/metadata/metadata.repository.js';
 import { MetadataService } from './modules/metadata/metadata.service.js';
 import { AnthropicProvider } from './modules/nl-query/llm/anthropic.provider.js';
+import { GeminiProvider } from './modules/nl-query/llm/gemini.provider.js';
+import { OpenAiProvider } from './modules/nl-query/llm/openai.provider.js';
 import { NlQueryService } from './modules/nl-query/nl-query.service.js';
 import { FallbackQueryParser } from './modules/nl-query/parsers/fallback.parser.js';
 import { LlmQueryParser } from './modules/nl-query/parsers/llm.parser.js';
@@ -54,6 +56,26 @@ function createQueryParser(env: Env, logger: Logger): NlQueryParser {
       }
       return new FallbackQueryParser(
         new LlmQueryParser(new AnthropicProvider(env.ANTHROPIC_API_KEY, env.ANTHROPIC_MODEL)),
+        ruleBased,
+        logger,
+      );
+    case 'gemini':
+      if (!env.GEMINI_API_KEY) {
+        logger.warn('AI_PROVIDER=gemini but GEMINI_API_KEY is not set; using the rule-based parser');
+        return ruleBased;
+      }
+      return new FallbackQueryParser(
+        new LlmQueryParser(new GeminiProvider(env.GEMINI_API_KEY, env.GEMINI_MODEL, logger)),
+        ruleBased,
+        logger,
+      );
+    case 'openai':
+      if (!env.OPENAI_API_KEY) {
+        logger.warn('AI_PROVIDER=openai but OPENAI_API_KEY is not set; using the rule-based parser');
+        return ruleBased;
+      }
+      return new FallbackQueryParser(
+        new LlmQueryParser(new OpenAiProvider(env.OPENAI_API_KEY, env.OPENAI_MODEL, logger)),
         ruleBased,
         logger,
       );

@@ -16,9 +16,13 @@ const EnvSchema = z.object({
   QUERY_CACHE_TTL_SECONDS: z.coerce.number().int().nonnegative().default(300),
   RECORDS_PAGE_LIMIT: z.coerce.number().int().positive().max(5_000).default(500),
 
-  AI_PROVIDER: z.enum(['anthropic', 'rule-based']).default('rule-based'),
+  AI_PROVIDER: z.enum(['anthropic', 'gemini', 'openai', 'rule-based']).default('rule-based'),
   ANTHROPIC_API_KEY: z.string().optional(),
   ANTHROPIC_MODEL: z.string().default('claude-opus-5-5'),
+  GEMINI_API_KEY: z.string().optional(),
+  GEMINI_MODEL: z.string().default('gemini-3.5-flash'),
+  OPENAI_API_KEY: z.string().optional(),
+  OPENAI_MODEL: z.string().default('gpt-4.1-mini'),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

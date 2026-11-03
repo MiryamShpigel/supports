@@ -14,11 +14,15 @@ export type InterpretOutcome = 'filled' | 'out-of-scope';
  */
 @Injectable({ providedIn: 'root' })
 export class FreeTextStore {
+  private static readonly SLOW_PARSE_NOTICE_DELAY_MS = 15_000;
+
   private readonly api = inject(SupportsApi);
   private readonly query = inject(QueryStore);
+  private slowParseNoticeTimer: ReturnType<typeof setTimeout> | undefined;
 
   readonly text = signal('');
   readonly parsing = signal(false);
+  readonly showSlowParseNotice = signal(false);
   readonly interpretation = signal<NlParseResult | null>(null);
   readonly outcome = signal<InterpretOutcome | null>(null);
   /** The text the current interpretation was made from, and when it was applied. */
@@ -61,6 +65,12 @@ export class FreeTextStore {
 
     const request = ++this.requestSeq;
     this.parsing.set(true);
+    this.showSlowParseNotice.set(false);
+    this.clearSlowParseNoticeTimer();
+    this.slowParseNoticeTimer = setTimeout(() => {
+      if (request === this.requestSeq && this.parsing()) this.showSlowParseNotice.set(true);
+    }, FreeTextStore.SLOW_PARSE_NOTICE_DELAY_MS);
+
     try {
       const result = await this.api.parseFreeText(text, this.query.query().dataset);
       if (request !== this.requestSeq) return null; // cancelled or cleared meanwhile
@@ -72,13 +82,19 @@ export class FreeTextStore {
       this.outcome.set(result.scope === 'out' ? 'out-of-scope' : 'filled');
       return this.outcome();
     } finally {
-      if (request === this.requestSeq) this.parsing.set(false);
+      if (request === this.requestSeq) {
+        this.clearSlowParseNoticeTimer();
+        this.showSlowParseNotice.set(false);
+        this.parsing.set(false);
+      }
     }
   }
 
   /** Stops waiting for the interpretation in flight; its answer will be ignored. */
   cancel(): void {
     this.requestSeq++;
+    this.clearSlowParseNoticeTimer();
+    this.showSlowParseNotice.set(false);
     this.parsing.set(false);
   }
 
@@ -93,4 +109,9 @@ export class FreeTextStore {
 
   /** Identifies the latest interpretation request; an older answer arriving late is ignored. */
   private requestSeq = 0;
+
+  private clearSlowParseNoticeTimer(): void {
+    if (this.slowParseNoticeTimer !== undefined) clearTimeout(this.slowParseNoticeTimer);
+    this.slowParseNoticeTimer = undefined;
+  }
 }

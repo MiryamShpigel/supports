@@ -12,6 +12,10 @@ x-api-env: &api-env
   AI_PROVIDER: ${AI_PROVIDER:-rule-based}
   ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
   ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-opus-5-5}
+  GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+  GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.5-flash}
+  OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+  OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
 
 services:
   db:

@@ -67,11 +67,16 @@ const EXAMPLES = [
     }
 
     <div class="notes" role="status">
-      @if (store.ignoredQuestion()) {
+      @if (store.parsing() && store.showSlowParseNotice()) {
+        <p class="note muted"><mat-icon inline>schedule</mat-icon> הפענוח עדיין מתבצע. אם ה-AI לא יענה בתוך 15 שניות, השאלה תעבור לפענוח חלופי.</p>
+      } @else if (store.ignoredQuestion()) {
         <p class="note muted"><mat-icon inline>info</mat-icon> השאלה לא פוענחה, וההרצה תשתמש בשדות כפי שהם. "פיענוח ומילוי שדות" ימלא אותם לפי השאלה.</p>
       } @else if (store.shouldInterpretOnRun() && !store.parsing()) {
         <p class="note todo"><mat-icon inline>psychology</mat-icon> לחצו "פיענוח ומילוי שדות" (או Enter). ההרצה תתאפשר אחרי הפיענוח.</p>
       } @else if (store.interpretation(); as result) {
+        @for (warning of result.warnings; track warning) {
+          <p class="note warning"><mat-icon inline>info</mat-icon> {{ warning }}</p>
+        }
         @if (result.scope === 'out') {
           <p class="note out"><mat-icon inline>block</mat-icon> <span><strong>אין לשאלה הזו תשובה במערכת.</strong> {{ result.scopeNote }} השדות לא שונו.</span></p>
           <div class="examples">
@@ -88,9 +93,6 @@ const EXAMPLES = [
             <p class="interpreted">{{ result.question }}</p>
             @if (result.scope === 'partial') {
               <p class="note partial"><mat-icon inline>warning</mat-icon> <span><strong>תשובה חלקית בלבד:</strong> {{ result.scopeNote }}</span></p>
-            }
-            @for (warning of result.warnings; track warning) {
-              <p class="note warning"><mat-icon inline>info</mat-icon> {{ warning }}</p>
             }
             @if (store.editedSinceInterpretation()) {
               <p class="note muted"><mat-icon inline>edit</mat-icon> השדות שונו ידנית מאז הפירוש. הסיכום ליד "הרצה" מראה מה ירוץ עכשיו.</p>
@@ -148,6 +150,9 @@ export class FreeTextComponent {
   }
 
   providerLabel(provider: string): string {
-    return provider === 'anthropic' ? 'Claude' : 'פענוח מבוסס חוקים';
+    if (provider === 'anthropic') return 'Claude';
+    if (provider === 'gemini') return 'Gemini';
+    if (provider === 'openai') return 'OpenAI';
+    return 'פענוח מבוסס חוקים';
   }
 }

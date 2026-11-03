@@ -41,6 +41,20 @@ describe('NlQueryService scope handling', () => {
     expect(result.definition).toEqual(query());
   });
 
+  it('preserves the AI availability warning for an out-of-scope fallback result', async () => {
+    const result = await parse(
+      serviceReturning({
+        definition: query(),
+        warnings: ['שירות ה-AI הגיע למגבלת הבקשות (Rate limit); השאלה פוענחה במנגנון חלופי.'],
+        scope: 'out',
+        scopeNote: 'הנושא אינו נמצא במאגר.',
+      }),
+    );
+
+    expect(result.scope).toBe('out');
+    expect(result.warnings).toEqual(['שירות ה-AI הגיע למגבלת הבקשות (Rate limit); השאלה פוענחה במנגנון חלופי.']);
+  });
+
   it('treats an in-scope answer whose every part fails validation as out of scope', async () => {
     const result = await parse(
       serviceReturning({

@@ -39,7 +39,7 @@ flowchart TB
     container["container.ts<br/>composition root"]
   end
   pg[("PostgreSQL 16<br/>app · meta · data")]
-  llm["ספק AI (Claude)<br/>מאחורי LlmProvider"]
+  llm["ספק AI (Claude, Gemini או OpenAI)<br/>מאחורי LlmProvider"]
 
   web -- "REST /api/*" --> api
   shared -. import .-> web
@@ -55,7 +55,7 @@ flowchart TB
 | שרת | Node.js, Express 5, TypeScript, pg, zod, pino | קוד פתוח, שפה אחת לכל המערכת, Express קל ומוכר. המבנה (מודולים, שכבות, composition root) לא תלוי במסגרת, ואפשר לעבור ל-NestJS בלי לשנות את הלוגיקה |
 | מסד נתונים | PostgreSQL 16, סכמות `app` / `meta` / `data`, ו-JSONB לשדות דינמיים | ראו [בסיס הנתונים ונימוק הבחירה](#בסיס-הנתונים-ונימוק-הבחירה) |
 | קליינט | Angular 20 (standalone, signals), Angular Material, ng2-charts | מסגרת מלאה ונפוצה בממשלה, תמיכה מובנית ב-RTL ובנגישות דרך Material. signals מספיקים לניהול מצב בהיקף הזה, בלי NgRx |
-| AI | Claude דרך הממשק `LlmProvider`, עם גיבוי של מפענח מבוסס חוקים | structured outputs מבטיחים פלט בסכמה. הממשק מאפשר להחליף ספק, למשל למודל בענן הממשלתי |
+| AI | Claude, Gemini או OpenAI דרך הממשק `LlmProvider`, עם גיבוי של מפענח מבוסס חוקים | structured outputs מבטיחים פלט בסכמה. אפשר לבחור ספק ב-`AI_PROVIDER` |
 | בדיקות | vitest | מהיר, תומך ב-TypeScript וב-ESM בלי הגדרות |
 
 **החלטות מרכזיות:**
@@ -121,6 +121,8 @@ classDiagram
   class RuleBasedQueryParser
   class FallbackQueryParser
   class AnthropicProvider
+  class GeminiProvider
+  class OpenAiProvider
 
   QueryService --> MetadataService
   QueryService --> QueryRepository
@@ -146,6 +148,8 @@ classDiagram
   FallbackQueryParser --> NlQueryParser : primary, fallback
   LlmQueryParser --> LlmProvider
   AnthropicProvider ..|> LlmProvider
+  GeminiProvider ..|> LlmProvider
+  OpenAiProvider ..|> LlmProvider
 ```
 
 בקליינט: הרכיבים (`QueryBuilderComponent`, `FreeTextComponent`, `ResultsComponent`, `SavedQueriesComponent`) קוראים רק מ-stores (`QueryStore`, `FreeTextStore`, `SavedQueriesStore`), וה-stores הם היחידים שמדברים עם `SupportsApi`.
@@ -228,9 +232,9 @@ docker compose exec -T db psql -U supports -d supports < apps/api/src/db/example
 
 ## AI: החלפת ספק והגבלות
 
-**החלפת ספק.** כל ספק הוא מחלקה אחת שמממשת את `LlmProvider` (`generateObject(system, prompt, schema)`), ועוד `case` אחד ב-`container.ts`. הבחירה נעשית במשתנה הסביבה `AI_PROVIDER`.
+**החלפת ספק.** Anthropic, Gemini ו-OpenAI מממשים את `LlmProvider` (`generateObject(system, prompt, schema)`). הבחירה נעשית במשתנה הסביבה `AI_PROVIDER` (`anthropic`, `gemini`, `openai` או `rule-based`).
 
-**גיבוי.** `FallbackQueryParser` מנסה את ה-AI, ואם הוא נכשל (אין מפתח, אין קרדיט, timeout, סירוב) הוא עובר למפענח מבוסס החוקים. המשתמש מקבל הודעה שהפענוח נעשה במנגנון חלופי.
+**גיבוי.** `FallbackQueryParser` מנסה את ה-AI, ואם הוא נכשל (אין מפתח, אין קרדיט, timeout, סירוב) הוא עובר למפענח מבוסס החוקים. בקשת Gemini או OpenAI ממתינה עד 15 שניות לכל היותר; במקרה של rate limit המשתמש מקבל הודעה מפורשת בממשק.
 
 **ההגבלות, בשכבות:**
 
@@ -246,7 +250,7 @@ docker compose exec -T db psql -U supports -d supports < apps/api/src/db/example
 
 ```bash
 npm install
-cp apps/api/.env.example apps/api/.env   # ולמלא ANTHROPIC_API_KEY אם רוצים AI
+cp apps/api/.env.example apps/api/.env   # להגדיר AI_PROVIDER ואת מפתח הספק שנבחר
 npm run db:up        # PostgreSQL 16 ב-Docker, פורט 5544
 npm run db:migrate   # מיגרציות
 npm run db:seed      # 3,000 בקשות לדוגמה + 2 שאילתות שמורות
@@ -266,7 +270,7 @@ npm run dev          # shared (watch) + API על 3000 + Angular על 4200
 בלי Node מקומי, רק Docker:
 
 ```bash
-cp .env.example .env          # אופציונלי: AI_PROVIDER=anthropic + ANTHROPIC_API_KEY
+cp .env.example .env          # אופציונלי: AI_PROVIDER=gemini + GEMINI_API_KEY
 docker compose up -d --build  # db, migrate, api, web
 docker compose run --rm migrate node dist/db/seed.js   # נתוני דוגמה, פעם אחת
 ```
@@ -296,9 +300,13 @@ docker compose run --rm migrate node dist/db/seed.js   # נתוני דוגמה, 
 | משתנה | ברירת מחדל | הערה |
 |---|---|---|
 | `DATABASE_URL` | חובה | |
-| `AI_PROVIDER` | `rule-based` | `anthropic` מפעיל את Claude, עם גיבוי |
+| `AI_PROVIDER` | `rule-based` | `anthropic`, `gemini` או `openai` מפעילים את ספק ה-AI שנבחר, עם גיבוי |
 | `ANTHROPIC_API_KEY` | ריק | בלעדיו המערכת עובדת עם המפענח מבוסס החוקים |
 | `ANTHROPIC_MODEL` | `claude-opus-5-5` | |
+| `GEMINI_API_KEY` | ריק | נדרש כש-`AI_PROVIDER=gemini` |
+| `GEMINI_MODEL` | `gemini-3.8-flash` | מודל Gemini |
+| `OPENAI_API_KEY` | ריק | נדרש כש-`AI_PROVIDER=openai` |
+| `OPENAI_MODEL` | `gpt-4.1-mini` | מודל OpenAI |
 | `QUERY_CACHE_TTL_SECONDS` | 300 | 0 מכבה את המטמון |
 | `RECORDS_PAGE_LIMIT` | 500 | מקסימום 5,000 |
 | `DB_STATEMENT_TIMEOUT_MS` | 10000 | |
@@ -321,7 +329,7 @@ apps/
         metadata/              קריאת meta.*
         queries/               בניית SQL, הרצה, מטמון
         nl-query/              פענוח שאלה חופשית
-          llm/                 LlmProvider + AnthropicProvider
+          llm/                 LlmProvider + AnthropicProvider + GeminiProvider + OpenAiProvider
           parsers/             LLM, מבוסס חוקים, גיבוי
         saved-queries/         CRUD + הרצה
         audit/                 תיעוד פעולות
@@ -361,7 +369,7 @@ npm test
 | חבילה | מה נבדק |
 |---|---|
 | `packages/shared` | ולידציה מול מטא-דאטה, ניסוח שאלה, כללי בחירת עוגה |
-| `apps/api` | בניית SQL (פרמטרים, JSONB), מפענח מבוסס חוקים, טיפול ב-scope בשירות, המדיניות בפרומפט לכל ספק, ה-provider של Anthropic |
+| `apps/api` | בניית SQL (פרמטרים, JSONB), מפענחים, טיפול ב-scope, מדיניות הפרומפט וספקי Anthropic ו-Gemini |
 
 לקליינט אין עדיין בדיקות.
 
