@@ -1,0 +1,86 @@
+<section class="panel">
+  <h2 class="panel-title">
+    <mat-icon>search</mat-icon> שאילתה
+    @if (store.editing(); as editing) {
+      <span class="editing">עריכת "{{ editing.name }}"</span>
+    }
+  </h2>
+
+  <app-free-text />
+
+  <button
+    type="button"
+    class="fields-toggle"
+    [attr.aria-expanded]="fieldsOpen()"
+    aria-controls="query-fields"
+    (click)="fieldsOpen.set(!fieldsOpen())"
+  >
+    <mat-icon>{{ fieldsOpen() ? 'remove' : 'add' }}</mat-icon>
+    <span>{{ fieldsOpen() ? 'הסתרת השדות' : 'בחירת שדות ידנית' }}</span>
+    @if (activeParts() > 0) {
+      <span class="count">{{ activeParts() }} בשימוש{{ store.filledParts().size > 0 ? ' · מולאו מהשאלה' : '' }}</span>
+    }
+  </button>
+
+  @if (fieldsOpen()) {
+    <div id="query-fields" class="fields">
+      <div class="grid">
+        @for (field of store.filterableFields(); track field.key) {
+          <app-filter-field
+            [field]="field"
+            [filter]="store.filterFor(field.key)"
+            [class.filled]="store.filledParts().has(field.key)"
+            [class.status-field]="field.key === 'status'"
+            [class.organization-type-field]="field.key === 'org_type'"
+            [class.domain-field]="field.key === 'domain'"
+            [class.district-field]="field.key === 'district'"
+            [class.year-field]="field.key === 'year'"
+            [class.requested-amount-field]="field.key === 'requested_amount'"
+            (filterChange)="store.setFilter(field.key, $event)"
+          />
+        }
+        <mat-form-field class="group-by-field margin-top-special" appearance="outline" subscriptSizing="dynamic" [class.filled]="store.filledParts().has('groupBy')">
+          <mat-label>פילוח לפי (עד 2)</mat-label>
+          <mat-select multiple appClickOutside [value]="store.query().groupBy" (selectionChange)="store.setGroupBy($event.value)" placeholder="ללא – רשימת בקשות">
+            @for (field of store.groupableFields(); track field.key) {
+              <mat-option [value]="field.key" [disabled]="isGroupLimitReached(field.key)">{{ field.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field class="metrics-field" appearance="outline" subscriptSizing="dynamic" [class.filled]="store.filledParts().has('metrics')">
+          <mat-label>מדדים</mat-label>
+          <mat-select multiple appClickOutside [value]="store.query().metrics" (selectionChange)="store.setMetrics($event.value)">
+            @for (metric of store.metrics(); track metric.key) {
+              <mat-option [value]="metric.key" [disabled]="metric.key === 'count'">{{ metric.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </div>
+  }
+
+  @for (issue of store.issues(); track issue.path) {
+    <p class="issue"><mat-icon inline>error</mat-icon> {{ issue.message }}</p>
+  }
+
+  <div class="action-bar">
+    <div class="question" aria-live="polite">
+      <span class="question-label">המערכת תציג לכם:</span>
+      <p>{{ store.question() }}</p>
+    </div>
+    <div class="actions">
+      <button
+        mat-flat-button
+        (click)="run()"
+        [disabled]="store.issues().length > 0 || store.running() || freeText.parsing() || freeText.shouldInterpretOnRun()"
+      >
+        <mat-icon>play_arrow</mat-icon> הרצה
+      </button>
+      <button mat-stroked-button (click)="save()" [disabled]="store.issues().length > 0">
+        <mat-icon>bookmark_add</mat-icon> שמירה
+      </button>
+      <button mat-button (click)="store.reset()"><mat-icon>restart_alt</mat-icon> ניקוי</button>
+    </div>
+  </div>
+</section>

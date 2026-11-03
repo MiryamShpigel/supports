@@ -1,0 +1,25 @@
+<div class="toolbar">
+  @if (metricColumns().length > 1) {
+    <mat-button-toggle-group hideSingleSelectionIndicator [value]="metricKey()" (change)="metricKey.set($event.value)" aria-label="מדד בגרף">
+      @for (metric of metricColumns(); track metric.key) {
+        <mat-button-toggle [value]="metric.key">{{ metric.label }}</mat-button-toggle>
+      }
+    </mat-button-toggle-group>
+  }
+  @if (pieAllowed()) {
+    <mat-button-toggle-group hideSingleSelectionIndicator [value]="kind()" (change)="kind.set($event.value)" aria-label="סוג גרף">
+      <mat-button-toggle value="doughnut">עוגה</mat-button-toggle>
+      <mat-button-toggle value="bar">עמודות</mat-button-toggle>
+    </mat-button-toggle-group>
+  }
+</div>
+@if (kind() === 'bar' && tooManySeries()) {
+  <p class="muted note">מוצגות {{ maxSeries }} הסדרות הראשונות; הנתונים המלאים בטבלה.</p>
+}
+<div class="chart-box">
+  @if (kind() === 'doughnut') {
+    <canvas baseChart type="doughnut" [data]="doughnut().data" [options]="doughnut().options"></canvas>
+  } @else {
+    <canvas baseChart type="bar" [data]="bars().data" [options]="bars().options"></canvas>
+  }
+</div>

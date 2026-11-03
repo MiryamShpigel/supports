@@ -1,0 +1,33 @@
+.question {
+  font-weight: 600;
+  margin: 0 0 2px;
+}
+
+.meta {
+  margin: 0 0 14px;
+  font-size: 0.85rem;
+}
+
+.cache {
+  color: #8a5a00;
+}
+
+.table-wrap {
+  max-height: 460px;
+  overflow: auto;
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
+}
+
+table {
+  width: 100%;
+}
+
+.num {
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+}
+
+.note {
+  font-size: 0.85rem;
+}

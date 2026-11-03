@@ -1,0 +1,34 @@
+@if (field().dataType === 'enum') {
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ field().label }}</mat-label>
+    <mat-select multiple appClickOutside [value]="selectedValues()" (selectionChange)="emitValues($event.value)" placeholder="הכל">
+      @for (option of field().options; track option.value) {
+        <mat-option [value]="option.value">{{ option.label }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+} @else {
+  <div class="numeric">
+    <div class="numeric-header">
+      <span class="numeric-label">{{ field().label }}</span>
+      @if (supportsBoth()) {
+        <mat-button-toggle-group hideSingleSelectionIndicator [value]="mode()" (change)="setMode($event.value)">
+          <mat-button-toggle value="in">בודד</mat-button-toggle>
+          <mat-button-toggle value="between">טווח</mat-button-toggle>
+        </mat-button-toggle-group>
+      }
+    </div>
+    <div class="numeric-inputs">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>{{ mode() === 'between' ? 'מ-' : 'ערך' }}</mat-label>
+        <input matInput type="number" [value]="from()" (input)="from.set(read($event)); emitNumbers()" />
+      </mat-form-field>
+      @if (mode() === 'between') {
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>עד</mat-label>
+          <input matInput type="number" [value]="to()" (input)="to.set(read($event)); emitNumbers()" />
+        </mat-form-field>
+      }
+    </div>
+  </div>
+}

@@ -1,0 +1,11 @@
+mat-form-field {
+  width: 100%;
+}
+
+.question {
+  background: #f0f5fd;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-top: 0;
+  font-weight: 600;
+}

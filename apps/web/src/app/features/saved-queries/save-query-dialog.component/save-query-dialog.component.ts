@@ -22,36 +22,8 @@ export interface SaveQueryDialogResult {
   selector: 'app-save-query-dialog',
   imports: [MatDialogModule, MatFormFieldModule, MatInputModule, MatButtonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <h2 mat-dialog-title>שמירת שאילתה</h2>
-    <mat-dialog-content>
-      <p class="question">{{ data.question }}</p>
-      <mat-form-field appearance="outline">
-        <mat-label>שם השאילתה</mat-label>
-        <input matInput [value]="name()" (input)="name.set(read($event))" maxlength="100" cdkFocusInitial />
-        @if (name().trim().length < 2) {
-          <mat-hint>לפחות 2 תווים</mat-hint>
-        }
-      </mat-form-field>
-      <mat-form-field appearance="outline">
-        <mat-label>תיאור (רשות)</mat-label>
-        <textarea matInput rows="2" [value]="description()" (input)="description.set(read($event))" maxlength="500"></textarea>
-      </mat-form-field>
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      <button mat-button mat-dialog-close>ביטול</button>
-      @if (data.canUpdate) {
-        <button mat-stroked-button [disabled]="!valid()" (click)="close('create')">שמירה כחדשה</button>
-        <button mat-flat-button [disabled]="!valid()" (click)="close('update')">עדכון השאילתה</button>
-      } @else {
-        <button mat-flat-button [disabled]="!valid()" (click)="close('create')">שמירה</button>
-      }
-    </mat-dialog-actions>
-  `,
-  styles: `
-    mat-form-field { width: 100%; }
-    .question { background: #f0f5fd; border-radius: 8px; padding: 10px 12px; margin-top: 0; font-weight: 600; }
-  `,
+  templateUrl: './save-query-dialog.component.html',
+  styleUrl: './save-query-dialog.component.css',
 })
 export class SaveQueryDialogComponent {
   protected readonly data = inject<SaveQueryDialogData>(MAT_DIALOG_DATA);

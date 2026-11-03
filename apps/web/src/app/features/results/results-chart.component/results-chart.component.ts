@@ -3,7 +3,7 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { canShowPie, type ChartKind, type QueryResult } from '@supports/shared';
 import type { ChartConfiguration } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
-import { QueryStore } from '../../state/query.store';
+import { QueryStore } from '../../../state/query.store';
 
 /** Categorical palette in fixed order (validated for color-vision deficiency). */
 const SERIES_COLORS = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#6250d6', '#e34948'];
@@ -21,41 +21,8 @@ const percentFormat = new Intl.NumberFormat('he-IL', { style: 'percent', maximum
   selector: 'app-results-chart',
   imports: [BaseChartDirective, MatButtonToggleModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <div class="toolbar">
-      @if (metricColumns().length > 1) {
-        <mat-button-toggle-group hideSingleSelectionIndicator [value]="metricKey()" (change)="metricKey.set($event.value)" aria-label="מדד בגרף">
-          @for (metric of metricColumns(); track metric.key) {
-            <mat-button-toggle [value]="metric.key">{{ metric.label }}</mat-button-toggle>
-          }
-        </mat-button-toggle-group>
-      }
-      @if (pieAllowed()) {
-        <mat-button-toggle-group hideSingleSelectionIndicator [value]="kind()" (change)="kind.set($event.value)" aria-label="סוג גרף">
-          <mat-button-toggle value="doughnut">עוגה</mat-button-toggle>
-          <mat-button-toggle value="bar">עמודות</mat-button-toggle>
-        </mat-button-toggle-group>
-      }
-    </div>
-    @if (kind() === 'bar' && tooManySeries()) {
-      <p class="muted note">מוצגות {{ maxSeries }} הסדרות הראשונות; הנתונים המלאים בטבלה.</p>
-    }
-    <div class="chart-box">
-      @if (kind() === 'doughnut') {
-        <canvas baseChart type="doughnut" [data]="doughnut().data" [options]="doughnut().options"></canvas>
-      } @else {
-        <canvas baseChart type="bar" [data]="bars().data" [options]="bars().options"></canvas>
-      }
-    </div>
-  `,
-  styles: `
-    :host { display: block; margin-bottom: 16px; }
-    .chart-box { position: relative; height: 300px; }
-    .toolbar { display: flex; flex-wrap: wrap; gap: 8px 16px; justify-content: space-between; }
-    .toolbar:empty { display: none; }
-    mat-button-toggle-group { margin-bottom: 8px; font-size: 0.85rem; }
-    .note { font-size: 0.82rem; margin: 0 0 6px; }
-  `,
+  templateUrl: './results-chart.component.html',
+  styleUrl: './results-chart.component.css',
 })
 export class ResultsChartComponent {
   private readonly store = inject(QueryStore);

@@ -1,0 +1,26 @@
+<section class="panel">
+  <h2 class="panel-title"><mat-icon>bookmarks</mat-icon> שאילתות שמורות</h2>
+
+  @for (item of store.items(); track item.id) {
+    <article class="item" [class.active]="queryStore.editing()?.id === item.id">
+      <div class="item-head">
+        <h3>{{ item.name }}</h3>
+        <div class="item-actions">
+          <button mat-icon-button matTooltip="הרצה" (click)="store.run(item)"><mat-icon>play_arrow</mat-icon></button>
+          <button mat-icon-button matTooltip="עריכה" (click)="store.edit(item)"><mat-icon>edit</mat-icon></button>
+          <button mat-icon-button matTooltip="מחיקה" (click)="remove(item)"><mat-icon>delete</mat-icon></button>
+        </div>
+      </div>
+      <p class="question">{{ item.question }}</p>
+      <p class="meta muted">
+        @if (item.lastRunAt) {
+          הורצה לאחרונה {{ item.lastRunAt | date: 'dd/MM/yyyy HH:mm' }}
+        } @else {
+          טרם הורצה
+        }
+      </p>
+    </article>
+  } @empty {
+    <p class="muted">אין עדיין שאילתות שמורות. בנו שאילתה ולחצו "שמירת שאילתה".</p>
+  }
+</section>

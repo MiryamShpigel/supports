@@ -17,6 +17,7 @@
 ## Angular ו־Signals
 
 - הקליינט מבוסס Angular standalone. השתמש ב־Signals לניהול מצב תגובתי לפי הדפוסים הקיימים בפרויקט.
+- כל קומפוננטת Angular תופרד לשלושה קבצים: `<name>.component.ts`, `<name>.component.html` ו־`<name>.component.css`, בתוך תיקייה בשם `<name>.component`. חבר את ה־HTML וה־CSS דרך `templateUrl` ו־`styleUrl`; אל תטמיע תבניות או סגנונות בתוך קובץ ה־TypeScript.
 - שמור מצב מתמשך ב־stores; השתמש ב־`computed` לערכים הנגזרים ממנו במקום לשכפל מצב. השתמש ב־`effect` רק לתופעות לוואי אמיתיות, לא כתחליף לחישוב נגזר.
 - רכיבים אחראים לתצוגה ולאינטראקציה מול stores. העבר קריאות HTTP דרך `SupportsApi`; אל תקרא ל־HTTP ישירות מתוך רכיבים.
 - השתמש בטיפוסים ובחוזים מ־`@supports/shared`, ושמור על RTL, נגישות ודפוסי Angular Material הקיימים.

@@ -1,0 +1,80 @@
+<form (submit)="$event.preventDefault(); interpret()">
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-icon matPrefix class="spark">auto_awesome</mat-icon>
+    <mat-label>שאלו בשפה חופשית</mat-label>
+    <textarea
+      matInput
+      rows="1"
+      maxlength="500"
+      placeholder="למשל: כמה בקשות אושרו ב-2024 לפי מחוז"
+      [value]="store.text()"
+      (input)="store.setText(read($event))"
+      (keydown.enter)="onEnter($any($event))"
+      (keydown.escape)="store.parsing() ? store.cancel() : store.clear()"
+    ></textarea>
+    @if (store.text() && !store.parsing()) {
+      <button mat-icon-button matSuffix type="button" matTooltip="מחיקת השאלה" aria-label="מחיקת השאלה" (click)="store.clear()">
+        <mat-icon>close</mat-icon>
+      </button>
+    }
+  </mat-form-field>
+  @if (store.parsing()) {
+    <button mat-stroked-button type="button" class="action" (click)="store.cancel()">
+      <mat-icon>close</mat-icon> ביטול
+    </button>
+  } @else {
+    <button mat-flat-button type="submit" class="action" matTooltip="אפשר גם Enter" [disabled]="store.text().trim().length < 3">
+      <mat-icon>psychology</mat-icon> פיענוח ומילוי שדות
+    </button>
+  }
+  <!-- Overlays the bottom edge of the box, so showing it does not move anything. -->
+  @if (store.parsing()) {
+    <mat-progress-bar mode="indeterminate" class="progress" />
+  }
+</form>
+
+@if (!store.text().trim()) {
+  <div class="examples">
+    @for (example of examples; track example) {
+      <button type="button" class="example" (click)="store.setText(example)">{{ example }}</button>
+    }
+  </div>
+}
+
+<div class="notes" role="status">
+  @if (store.parsing() && store.showSlowParseNotice()) {
+    <p class="note muted"><mat-icon inline>schedule</mat-icon> הפענוח עדיין מתבצע. אם ה-AI לא יענה בתוך 15 שניות, השאלה תעבור לפענוח חלופי.</p>
+  } @else if (store.ignoredQuestion()) {
+    <p class="note muted"><mat-icon inline>info</mat-icon> השאלה לא פוענחה, וההרצה תשתמש בשדות כפי שהם. "פיענוח ומילוי שדות" ימלא אותם לפי השאלה.</p>
+  } @else if (store.shouldInterpretOnRun() && !store.parsing()) {
+    <p class="note todo"><mat-icon inline>psychology</mat-icon> לחצו "פיענוח ומילוי שדות" (או Enter). ההרצה תתאפשר אחרי הפיענוח.</p>
+  } @else if (store.interpretation(); as result) {
+    @for (warning of result.warnings; track warning) {
+      <p class="note warning"><mat-icon inline>info</mat-icon> {{ warning }}</p>
+    }
+    @if (result.scope === 'out') {
+      <p class="note out"><mat-icon inline>block</mat-icon> <span><strong>אין לשאלה הזו תשובה במערכת.</strong> {{ result.scopeNote }} השדות לא שונו.</span></p>
+      <div class="examples">
+        @for (example of examples; track example) {
+          <button type="button" class="example" (click)="store.setText(example)">{{ example }}</button>
+        }
+      </div>
+    } @else {
+      <div class="interpretation">
+        <div class="interpretation-head">
+          <span class="muted">כך הבנתי את השאלה</span>
+          <span class="provider">{{ providerLabel(result.provider) }}</span>
+        </div>
+        <p class="interpreted">{{ result.question }}</p>
+        @if (result.scope === 'partial') {
+          <p class="note partial"><mat-icon inline>warning</mat-icon> <span><strong>תשובה חלקית בלבד:</strong> {{ result.scopeNote }}</span></p>
+        }
+        @if (store.editedSinceInterpretation()) {
+          <p class="note muted"><mat-icon inline>edit</mat-icon> השדות שונו ידנית מאז הפירוש. הסיכום ליד "הרצה" מראה מה ירוץ עכשיו.</p>
+        } @else {
+          <p class="note todo"><mat-icon inline>play_circle</mat-icon> השדות מולאו לפי הפירוש. לחצו "הרצה" להצגת התוצאות, או פתחו את השדות כדי לתקן.</p>
+        }
+      </div>
+    }
+  }
+</div>

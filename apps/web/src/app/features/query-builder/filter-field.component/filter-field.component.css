@@ -1,0 +1,30 @@
+:host {
+  display: block;
+}
+
+mat-form-field {
+  width: 100%;
+}
+
+.numeric-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.numeric-label {
+  font-size: 0.85rem;
+  color: var(--app-text-muted);
+}
+
+.numeric-inputs {
+  display: flex;
+  gap: 8px;
+}
+
+mat-button-toggle-group {
+  height: 28px;
+  align-items: center;
+  font-size: 0.8rem;
+}
