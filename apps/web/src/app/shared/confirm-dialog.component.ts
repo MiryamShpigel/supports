@@ -1,3 +1,4 @@
+// Confirm dialog component for displaying confirmation prompts to the user.
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
