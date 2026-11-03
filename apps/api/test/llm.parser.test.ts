@@ -42,6 +42,45 @@ describe('LlmQueryParser', () => {
     expect(system).not.toContain(injection);
   });
 
+  it('asks the model to infer broad enum concepts from the listed option meanings', async () => {
+    const datasetWithReview = {
+      ...dataset,
+      fields: dataset.fields.map((field) =>
+        field.key === 'status'
+          ? {
+              ...field,
+              options: [
+                ...(field.options ?? []),
+                { value: 'in_review', label: 'בבדיקה', phrase: 'שנמצאות בבדיקה', synonyms: ['בטיפול'] },
+              ],
+            }
+          : field,
+      ),
+    };
+    const provider = new RecordingProvider({
+      scope: 'in',
+      scopeNote: '',
+      filters: [{ field: 'status', operator: 'in', values: ['submitted', 'in_review'] }],
+      groupBy: [],
+      metrics: ['count'],
+      unrecognized: [],
+    });
+
+    const result = await new LlmQueryParser(provider).parse('בקשות פתוחות', datasetWithReview);
+
+    expect(provider.requests[0]!.system).toContain(
+      'Interpret enum values semantically from their labels, phrases, synonyms, and the question context',
+    );
+    expect(provider.requests[0]!.system).toContain(
+      'A broad concept such as open, active, or pending may match multiple listed non-final status values',
+    );
+    expect(provider.requests[0]!.system).toContain('submitted = הוגשה');
+    expect(provider.requests[0]!.system).toContain('in_review = בבדיקה');
+    expect(result.definition.filters).toEqual([
+      { field: 'status', operator: 'in', values: ['submitted', 'in_review'] },
+    ]);
+  });
+
   it('passes on the scope and its note, and drops the note when in scope', async () => {
     const out = await new LlmQueryParser(new RecordingProvider(emptyAnswer)).parse('מה מזג האוויר?', dataset);
     expect(out.scope).toBe('out');

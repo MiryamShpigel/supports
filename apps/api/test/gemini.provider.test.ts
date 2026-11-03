@@ -41,7 +41,7 @@ describe('GeminiProvider', () => {
     expect(JSON.stringify(request.response_format.schema)).not.toContain('$schema');
     expect(JSON.stringify(request.response_format.schema)).not.toContain('additionalProperties');
     expect(createInteractionMock.mock.calls[0][1]).toEqual({
-      timeout_ms: 15_000,
+      timeout_ms: 30_000,
       retries: { strategy: 'none' },
     });
     expect(logger.info).toHaveBeenCalledWith(
