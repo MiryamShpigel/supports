@@ -11,6 +11,7 @@
     "db:up": "docker compose up -d db",
     "db:migrate": "npm run db:migrate -w @supports/api",
     "db:seed": "npm run db:seed -w @supports/api",
+    "sql": "node scripts/run-sql.mjs",
     "dev": "npm run build:shared && concurrently -n shared,api,web -c gray,blue,magenta \"npm run watch -w @supports/shared\" \"npm run dev -w @supports/api\" \"npm start -w @supports/web\"",
     "build": "npm run build:shared && npm run build -w @supports/api && npm run build -w @supports/web",
     "test": "npm run build:shared && npm test -w @supports/shared && npm test -w @supports/api"

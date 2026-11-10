@@ -207,6 +207,12 @@ sequenceDiagram
 שדה עם `storage = 'attribute'` נקרא מעמודת ה-JSONB בשם `attributes`, ולכן לא צריך לשנות את סכמת הטבלה. דוגמה מלאה, "אשכול חברתי":
 
 ```bash
+npm run sql -- add-social-cluster-field
+```
+
+הפקודה מחפשת את הקובץ בתיקייה הנוכחית ואחר כך ב-`apps/api/src/db/examples`, ומריצה אותו מול ה-Postgres שבקונטיינר. היא מקבילה ל:
+
+```bash
 docker compose exec -T db psql -U supports -d supports < apps/api/src/db/examples/add-social-cluster-field.sql
 ```
 
